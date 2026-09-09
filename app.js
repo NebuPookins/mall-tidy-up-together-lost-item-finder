@@ -30,6 +30,7 @@
   var summary = $('summary');
   var errorBox = $('error');
   var tooltip = $('tooltip');
+  var donateOverlay = $('donateOverlay');
 
   // ---- app state ----
   var items = [];            // extracted {cat, typ, slot, result, x, y, z}
@@ -419,12 +420,30 @@
     $('mapWrap').style.display = 'block';
 
     resetView();
+    showDonation();
   }
 
   function showError(msg) {
     errorBox.textContent = 'Error: ' + msg;
     errorBox.style.display = 'block';
   }
+
+  // ---- donation modal ----
+  function showDonation() {
+    donateOverlay.hidden = false;
+  }
+
+  function hideDonation() {
+    donateOverlay.hidden = true;
+  }
+
+  $('donateClose').addEventListener('click', hideDonation);
+  donateOverlay.addEventListener('click', function (e) {
+    if (e.target === donateOverlay) hideDonation();
+  });
+  window.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !donateOverlay.hidden) hideDonation();
+  });
 
   // ---- upload wiring ----
   dropzone.addEventListener('click', function () { fileInput.click(); });

@@ -256,3 +256,98 @@ main {
 }
 
 #tooltip b { color: #ffffff; }
+
+/* ---- donation modal ---- */
+.donate-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(11, 11, 11, 0.35);
+  animation: donate-fade 0.15s ease-out;
+}
+
+.donate-overlay[hidden] { display: none; }
+
+@keyframes donate-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.donate-card {
+  position: relative;
+  width: min(360px, 100%);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 28px 26px 24px;
+  text-align: center;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.22);
+  animation: donate-pop 0.18s ease-out;
+}
+
+@keyframes donate-pop {
+  from { transform: translateY(8px) scale(0.98); opacity: 0; }
+  to { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+.donate-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 30px;
+  height: 30px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 22px;
+  line-height: 1;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+
+.donate-close:hover {
+  color: var(--ink);
+  background: var(--surface-2);
+}
+
+.donate-heart {
+  font-size: 34px;
+  line-height: 1;
+  margin-bottom: 10px;
+}
+
+.donate-card h2 {
+  margin: 0 0 6px;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.donate-card p {
+  margin: 0 0 18px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink2);
+}
+
+.kofi {
+  display: inline-block;
+  padding: 10px 20px;
+  background: #ff5e5b;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: 8px;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.kofi:hover {
+  background: #e84e4b;
+  transform: translateY(-1px);
+}
