@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mall Map — Save Viewer</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>Mall: Tidy Up Together — save map</h1>
+    <p>Upload a save file to see where every item is. Drag to pan, scroll to zoom, hover for details.</p>
+  </header>
+
+  <main>
+    <div id="dropzone">
+      <div class="icon">🗺️</div>
+      <div class="title">Drop a save file here</div>
+      <div class="hint">or click to browse</div>
+      <div class="formats">No-Skill_Mode.sav · UE4 GVAS · parsed entirely in your browser</div>
+    </div>
+    <input type="file" id="file" accept=".sav,.bin,.gvas,.dat,application/octet-stream" hidden>
+
+    <div id="mapWrap">
+      <canvas id="map"></canvas>
+
+      <div id="legend">
+        <div class="row"><span class="swatch grey"></span>On a shelf (Result 1)</div>
+        <div class="row"><span class="swatch blue"></span>On the ground (Result 0)</div>
+        <div class="row"><span class="swatch orange"></span>Player spawn point</div>
+      </div>
+
+      <div id="summary">
+        <div><b id="filename">—</b></div>
+        <div class="counts">
+          <span><b id="total">0</b> items</span> ·
+          <span id="onShelf">0</span> on shelf ·
+          <span id="offShelf">0</span> on ground
+        </div>
+      </div>
+
+      <div id="controls">
+        <button id="reset">Reset view</button>
+        <button id="loadAnother">Load another save</button>
+        <button id="export">Export PNG</button>
+      </div>
+    </div>
+
+    <div id="error"></div>
+    <div id="tooltip"></div>
+  </main>
+
+  <script src="gvas.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
