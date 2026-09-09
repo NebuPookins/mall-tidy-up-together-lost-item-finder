@@ -97,6 +97,41 @@ main {
   color: var(--muted);
 }
 
+#dropzone .where {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+  text-align: left;
+  font-size: 11px;
+  color: var(--ink2);
+}
+
+#dropzone .where-title {
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+
+#dropzone .where-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 4px 0;
+}
+
+#dropzone .os {
+  flex: 0 0 auto;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+#dropzone code {
+  font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+  font-size: 10px;
+  color: var(--ink2);
+  word-break: break-all;
+}
+
 /* ---- map area ---- */
 #mapWrap {
   display: none;
