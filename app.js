@@ -113,9 +113,24 @@
     return step;
   }
 
-  // world -> screen (current view)
-  function sx(wx) { return (wx - bounds.xmin) * view.s + view.tx; }
-  function sy(wy) { return (bounds.ymax - wy) * view.s + view.ty; }
+  // world <-> screen (current view). The camera is rotated so world +X runs
+  // down-screen and world +Y runs right-to-left; toScreen/toWorld are inverses.
+  function toScreen(wx, wy) {
+    return {
+      x: (bounds.ymax - wy) * view.s + view.tx,
+      y: (wx - bounds.xmin) * view.s + view.ty
+    };
+  }
+  function toWorld(mx, my) {
+    return {
+      wx: bounds.xmin + (my - view.ty) / view.s,
+      wy: bounds.ymax - (mx - view.tx) / view.s
+    };
+  }
+  // on-screen map size in world units: world-Y is horizontal, world-X vertical.
+  function worldSize() {
+    return { w: bounds.ymax - bounds.ymin, h: bounds.xmax - bounds.xmin };
+  }
 
   // ---- canvas sizing (device-pixel-ratio aware) ----
   function resize() {
@@ -144,20 +159,20 @@
     ctx.fillRect(0, 0, w, h);
 
     // grid + axes (only when zoomed out enough to be useful)
-    if (view.s * (bounds.xmax - bounds.xmin) > 120) {
-      var xStep = pickSteps(bounds.xmax - bounds.xmin);
-      var yStep = pickSteps(bounds.ymax - bounds.ymin);
+    var size = worldSize();
+    if (view.s * size.w > 120) {
       ctx.strokeStyle = COLORS.grid;
       ctx.lineWidth = 1;
-      var xticks = niceTicks(bounds.xmin, bounds.xmax, xStep);
-      var yticks = niceTicks(bounds.ymin, bounds.ymax, yStep);
+      // constant world-X -> horizontal lines; constant world-Y -> vertical lines
+      var wxTicks = niceTicks(bounds.xmin, bounds.xmax, pickSteps(size.h));
+      var wyTicks = niceTicks(bounds.ymin, bounds.ymax, pickSteps(size.w));
       ctx.beginPath();
-      for (var i = 0; i < xticks.length; i++) {
-        var gx = sx(xticks[i]);
+      for (var i = 0; i < wyTicks.length; i++) {
+        var gx = toScreen(0, wyTicks[i]).x;
         ctx.moveTo(gx, 0); ctx.lineTo(gx, h);
       }
-      for (var j = 0; j < yticks.length; j++) {
-        var gy = sy(yticks[j]);
+      for (var j = 0; j < wxTicks.length; j++) {
+        var gy = toScreen(wxTicks[j], 0).y;
         ctx.moveTo(0, gy); ctx.lineTo(w, gy);
       }
       ctx.stroke();
@@ -167,7 +182,8 @@
     ctx.fillStyle = COLORS.onShelf;
     for (var g = 0; g < onShelf.length; g++) {
       var p = onShelf[g];
-      var px = sx(p.x), py = sy(p.y);
+      var sp = toScreen(p.x, p.y);
+      var px = sp.x, py = sp.y;
       if (px < -4 || px > w + 4 || py < -4 || py > h + 4) continue;
       ctx.fillRect(px - 1, py - 1, 2, 2);
     }
@@ -175,7 +191,8 @@
     // blue dots (off-shelf) — drawn larger and on top
     for (var b = 0; b < offShelf.length; b++) {
       var q = offShelf[b];
-      var qx = sx(q.x), qy = sy(q.y);
+      var sp = toScreen(q.x, q.y);
+      var qx = sp.x, qy = sp.y;
       if (qx < -20 || qx > w + 20 || qy < -20 || qy > h + 20) continue;
       ctx.beginPath();
       ctx.arc(qx, qy, 5.5, 0, Math.PI * 2);
@@ -193,12 +210,13 @@
     // labels for off-shelf items
     ctx.font = '600 11px -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
     for (var l = 0; l < offShelf.length; l++) {
-      drawOffShelfLabel(offShelf[l]);
+      drawOffShelfLabel(offShelf[l], size);
     }
   }
 
   function drawSpawn(w, h) {
-    var px = sx(SPAWN.x), py = sy(SPAWN.y);
+    var sp = toScreen(SPAWN.x, SPAWN.y);
+    var px = sp.x, py = sp.y;
     if (px < -40 || px > w + 40 || py < -40 || py > h + 40) return;
     ctx.strokeStyle = COLORS.spawn;
     ctx.lineWidth = 2;
@@ -225,10 +243,11 @@
     ctx.fillText('(-1317, 21.3)', px + 16, py + 6);
   }
 
-  function drawOffShelfLabel(item) {
-    var px = sx(item.x), py = sy(item.y);
-    var w = (bounds.xmax - bounds.xmin) * view.s;
-    var h = (bounds.ymax - bounds.ymin) * view.s;
+  function drawOffShelfLabel(item, size) {
+    var sp = toScreen(item.x, item.y);
+    var px = sp.x, py = sp.y;
+    var w = size.w * view.s;
+    var h = size.h * view.s;
     if (px < -120 || px > w + 120 || py < -120 || py > h + 120) return;
     var txt = '#' + item.cat + '/' + item.typ + ' · slot ' + item.slot;
     ctx.fillStyle = COLORS.surface;
@@ -248,13 +267,14 @@
   function resetView() {
     if (!bounds) return;
     var dim = resize();
+    var size = worldSize();
     baseScale = Math.min(
-      (dim.w - 48) / (bounds.xmax - bounds.xmin),
-      (dim.h - 48) / (bounds.ymax - bounds.ymin)
+      (dim.w - 48) / size.w,
+      (dim.h - 48) / size.h
     );
     view.s = baseScale;
-    view.tx = (dim.w - (bounds.xmax - bounds.xmin) * view.s) / 2;
-    view.ty = (dim.h - (bounds.ymax - bounds.ymin) * view.s) / 2;
+    view.tx = (dim.w - size.w * view.s) / 2;
+    view.ty = (dim.h - size.h * view.s) / 2;
     render();
   }
 
@@ -265,17 +285,21 @@
     var r = 14, r2 = r * r;
     for (var i = 0; i < offShelf.length; i++) {
       var it = offShelf[i];
-      var dx = sx(it.x) - mx, dy = sy(it.y) - my;
+      var sp = toScreen(it.x, it.y);
+      var dx = sp.x - mx, dy = sp.y - my;
       var d2 = dx * dx + dy * dy;
       if (d2 < r2 && d2 < bestD) { bestD = d2; best = it; }
     }
-    var sdx = sx(SPAWN.x) - mx, sdy = sy(SPAWN.y) - my;
-    if (sdx * sdx + sdy * sdy < r2 && sdx * sdx + sdy * sdy < bestD) { best = 'spawn'; }
+    var sp = toScreen(SPAWN.x, SPAWN.y);
+    var sdx = sp.x - mx, sdy = sp.y - my;
+    var sd2 = sdx * sdx + sdy * sdy;
+    if (sd2 < r2 && sd2 < bestD) { bestD = sd2; best = 'spawn'; }
     // on-shelf items (smaller grab radius)
     r = 6; r2 = r * r;
     for (var j = 0; j < onShelf.length; j++) {
       var p = onShelf[j];
-      var dx2 = sx(p.x) - mx, dy2 = sy(p.y) - my;
+      var sp = toScreen(p.x, p.y);
+      var dx2 = sp.x - mx, dy2 = sp.y - my;
       var d3 = dx2 * dx2 + dy2 * dy2;
       if (d3 < r2 && d3 < bestD) { bestD = d3; best = p; }
     }
@@ -321,11 +345,10 @@
     var factor = Math.exp(-e.deltaY * 0.0015);
     var newS = Math.min(Math.max(view.s * factor, baseScale * 0.05), baseScale * 120);
     // keep world point under cursor fixed
-    var wx = (mx - view.tx) / view.s;
-    var wy = (my - view.ty) / view.s;
+    var wp = toWorld(mx, my);
     view.s = newS;
-    view.tx = mx - wx * view.s;
-    view.ty = my - wy * view.s;
+    view.tx = mx - (bounds.ymax - wp.wy) * view.s;
+    view.ty = my - (wp.wx - bounds.xmin) * view.s;
     render();
   }, { passive: false });
 
