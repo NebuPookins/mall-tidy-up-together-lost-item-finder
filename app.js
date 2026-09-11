@@ -42,6 +42,16 @@
   var hoverItem = null;      // item currently under the cursor (or 'spawn')
   var currentFile = null;    // most recently loaded file (for the summary label)
 
+  // ---- background image (bg.jpg) ----
+  // The mall floorplan, drawn in world space under the map. Placement was tuned
+  // by hand and hardcoded: scale = world-units/px, x/y = world center, rot = degrees.
+  var BG = { scale: 3.46, x: -1066, y: 0, rot: -90 };
+  var bgImg = new Image();
+  bgImg.src = 'bg.jpg';
+  bgImg.addEventListener('load', function () {
+    if (bounds) render();
+  });
+
   // ---- pure helpers ----
   function findField(el, key) {
     for (var i = 0; i < el.length; i++) {
@@ -132,6 +142,29 @@
     return { w: bounds.ymax - bounds.ymin, h: bounds.xmax - bounds.xmin };
   }
 
+  // ---- background image ----
+  // Draws bg.jpg in world space so it pans/zooms with the map. Image axes are
+  // aligned to world axes (image-right = world +X, image-down = world +Y) at
+  // rot=0, then the usual world->screen rotation carries it onto the canvas.
+  function drawBackground() {
+    if (!bounds || !bgImg.complete || !bgImg.naturalWidth) return;
+    var iw = bgImg.naturalWidth, ih = bgImg.naturalHeight;
+    var k = view.s * BG.scale;                 // screen px per image px
+    var rad = BG.rot * Math.PI / 180;
+    var C = Math.cos(rad), S = Math.sin(rad);
+    ctx.save();
+    ctx.transform(
+      -k * S,   // a
+       k * C,   // b
+      -k * C,   // c
+      -k * S,   // d
+      bounds.ymax * view.s + view.tx - view.s * BG.y + (iw / 2) * k * S + (ih / 2) * k * C, // e
+      -bounds.xmin * view.s + view.ty + view.s * BG.x - (iw / 2) * k * C + (ih / 2) * k * S  // f
+    );
+    ctx.drawImage(bgImg, 0, 0);
+    ctx.restore();
+  }
+
   // ---- canvas sizing (device-pixel-ratio aware) ----
   function resize() {
     var dpr = window.devicePixelRatio || 1;
@@ -157,6 +190,7 @@
     // background
     ctx.fillStyle = COLORS.surface;
     ctx.fillRect(0, 0, w, h);
+    drawBackground();
 
     // grid + axes (only when zoomed out enough to be useful)
     var size = worldSize();
